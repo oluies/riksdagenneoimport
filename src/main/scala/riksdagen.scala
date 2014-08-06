@@ -64,7 +64,7 @@ object riksdagen extends App {
         val votes:JsResult[DokVotering] = json.validate[DokVotering]
 
         votes match {
-          case s: JsSuccess[DokVotering] => println("DokVotering: " + s.get.votering.size)
+          case s: JsSuccess[DokVotering] => println("DokVotering  : " + s.get.votering.size); assert(s.get.votering.size % 349 == 0)
           case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString())
         }
       }

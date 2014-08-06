@@ -5,5 +5,5 @@ package se.ce.dto
  */
 object Rost extends Enumeration {
   type Rost = Value
-  val Ja, Nej, Frånvarande  = Value
+  val Ja, Nej, Frånvarande,Avstår  = Value
 }
