@@ -23,7 +23,7 @@ object riksdagen extends App {
 
   Neo4jREST.setServer("localhost", 7474, "/db/data/")
 
-  val rConstraint = Cypher("""CREATE CONSTRAINT ON (n:LedarmotPerson) ASSERT n.intressent_id IS UNIQUE;""").execute()
+  val rConstraint = Cypher( """CREATE CONSTRAINT ON (n:LedarmotPerson) ASSERT n.intressent_id IS UNIQUE;""").execute()
   println(s"rConstraint $rConstraint")
 
 
@@ -58,13 +58,18 @@ object riksdagen extends App {
       if (attr.isRegularFile) {
         import se.ce.adapter.VoteringAdapter._
 
-        val fileContent: String = new String(Files.readAllBytes(file),StandardCharsets.UTF_8)
+        val fileContent: String = new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
         val json: JsValue = Json.parse(fileContent.replaceFirst("^\uFEFF", ""))
 
-        val votes:JsResult[DokVotering] = json.validate[DokVotering]
+
+        val votes: JsResult[DokVotering] = json.validate[DokVotering]
 
         votes match {
-          case s: JsSuccess[DokVotering] => println("DokVotering  : " + s.get.votering.size); assert(s.get.votering.size % 349 == 0)
+          case s: JsSuccess[DokVotering] => {
+            println("DokVotering  : " + s.get.votering.size)
+            assert(s.get.votering.size % 349 == 0)
+            println(insertVotering(s.get)._1)
+          }
           case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString())
         }
       }
@@ -74,13 +79,73 @@ object riksdagen extends App {
     }
   }
 
+  def insertVotering(d: DokVotering): (Boolean,Votering) = {
+
+    val v = d.votering(0)
+    val retval = Cypher(
+      """
+                MERGE (v:Votering {
+                             rm: {rm},
+                             beteckning: {beteckning},
+                             hangar_id: {hangar_id},
+                             votering_id:{votering_id},
+                             punkt: {punkt},
+                             avser: {avser},
+                             votering: {votering},
+                             banknummer: {banknummer},
+                             datum: {datum}
+                                        })
+                ON CREATE SET v.created = timestamp()
+                ON MATCH SET v.lastupdated = timestamp();
+      """).on("rm" -> v.rm)
+      .on("beteckning" -> v.beteckning)
+      .on("hangar_id" -> v.hangar_id.guid)
+      .on("votering_id" -> v.votering_id.guid)
+      .on("punkt" -> v.punkt)
+      .on("avser" -> v.avser)
+      .on("votering" -> v.votering.toString)
+      .on("banknummer" -> v.banknummer)
+      .on("datum" -> v.datum.toString).execute()
 
 
+    val results = for( vo <- d.votering) {
+      val retval2 = Cypher(
+        """
+           MATCH (l:LedarmotPerson { intressent_id:{intressent_id} }), (v:Votering { votering_id:{votering_id} } )
+           CREATE UNIQUE (l)-[r:VOTE { type:{type} }]-(v);
+         """).on("intressent_id",vo.intressent_id)
+        .on("votering_id",vo.votering_id)
+        .on("type",vo.rost.toString)
+      }
 
-  def insertLedarmot (p: LedarmotPerson): Unit = {
-      if (p.status.substring(0, 8) != "Tidigare") {
-        val result = Cypher(
-          """
+
+    /*
+
+    var retVal = true
+    try {
+      // throws an exception on a query that doesn't succeed.
+      Neo4jREST.sendQuery(statement)
+    } catch {
+      case e: Exception => retVal = false; println(e.getMessage)
+    }
+    retVal
+
+
+                MATCH (l:LedarmotPerson { intressent_id:{intressent_id} })
+                MERGE (l)-[r:VOTED { vote: {rost} }  ]->(v)
+    */
+
+    (retval,v)
+  }
+
+
+  def insertLedarmot(p: LedarmotPerson): (Boolean,LedarmotPerson) = {
+
+    var retval: Boolean = false
+
+    if (p.status.substring(0, 8) != "Tidigare") {
+      val result = Cypher(
+        """
                 MERGE (p:LedarmotPerson {
                                           intressent_id:{id},
                                           tilltalsnamn:{name},
@@ -97,21 +162,26 @@ object riksdagen extends App {
                 ON MATCH SET p.lastupdated = timestamp()
                 MERGE (parti:Parti {parti:{parti},namn:{parti}})
                 MERGE (p)-[:MEMBER_OF]->(parti);
-          """).on("id" -> p.intressent_id.id)
-          .on("name" -> p.tilltalsnamn)
-          .on("ename" -> p.efternamn)
-          .on("parti" -> p.parti.getOrElse("??"))
-          .on("fodd_ar" -> p.fodd_ar)
-          .on("kon" -> p.kon)
-          .on("hangar_guid" -> p.hangar_guid.guid).on("person_url_xml" -> p.person_url_xml)
-          .on("status" -> p.status)
-          .on("valkrets" -> p.valkrets.getOrElse(""))
-          .execute()
+        """).on("id" -> p.intressent_id.id)
+        .on("name" -> p.tilltalsnamn)
+        .on("ename" -> p.efternamn)
+        .on("parti" -> p.parti.getOrElse("??"))
+        .on("fodd_ar" -> p.fodd_ar)
+        .on("kon" -> p.kon)
+        .on("hangar_guid" -> p.hangar_guid.guid).on("person_url_xml" -> p.person_url_xml)
+        .on("status" -> p.status)
+        .on("valkrets" -> p.valkrets.getOrElse(""))
+        .execute()
 
-        println(s"neo4j Result $result $p")
-      } else {
-        println(p.intressent_id + " " + p.status)
-      }
+
+      println(s"neo4j Result $result $p")
+      retval = result
+    } else {
+      retval = false
+      println(p.intressent_id + " " + p.status)
+    }
+
+    (retval,p)
   }
 }
 

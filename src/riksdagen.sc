@@ -1,6 +1,7 @@
 import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.Date
 
 import play.api.libs.json.{JsValue, Json}
 import se.ce.dto.LedarmotPerson
@@ -24,3 +25,7 @@ projectHome foreach {
     }
   }
 }
+
+val d = new Date()
+d.formatted("") +"l"
+
