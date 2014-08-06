@@ -17,12 +17,6 @@ object VoteringAdapter {
   import play.api.data.validation.ValidationError
 
 
-  implicit val dokVoteringReads: Reads[DokVotering] = (
-    (__ \  "bla" ).readNullable[String]
-      (__ \  "Votering" ).lazyRead( list[Votering](voteringReads) or Reads.of[Votering].map( v => List(v)) )
-    )(DokVotering)
-
-
   implicit val voteringReads:Reads[Votering] = (
       (__ \ "rm").read[String] ~
       (__ \ "beteckning").read[String] ~
@@ -33,9 +27,12 @@ object VoteringAdapter {
       (__ \ "rost").read[String].map { rost => Rost.withName(rost) } ~
       (__ \ "avser").read[String] ~
       (__ \ "votering").read[String].map { votering => VoteringTyp.withName(votering) } ~
-      (__ \ "banknummer").read[Int] ~
+      (__ \ "banknummer").read[String].map( bänk => bänk.toInt) ~
       (__ \ "datum").read[Date]
-    )(Votering)
+    )(Votering.apply _)
+
+  implicit val dokVoteringReads: Reads[DokVotering] =
+    (JsPath \ "dokvotering" \ "votering").read[List[Votering]] map (DokVotering.apply _)
 }
 
 
