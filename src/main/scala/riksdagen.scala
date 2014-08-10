@@ -113,9 +113,10 @@ object riksdagen extends App {
         """
            MATCH (l:LedarmotPerson { intressent_id:{intressent_id} }), (v:Votering { votering_id:{votering_id} } )
            CREATE UNIQUE (l)-[r:VOTE { type:{type} }]-(v);
-         """).on("intressent_id",vo.intressent_id)
-        .on("votering_id",vo.votering_id)
-        .on("type",vo.rost.toString)
+         """).on("intressent_id"->vo.intressent_id.id)
+        .on("votering_id"->vo.votering_id.guid)
+        .on("type"->vo.rost.toString)
+        .execute()
       }
 
 
