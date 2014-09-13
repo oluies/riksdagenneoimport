@@ -18,8 +18,8 @@ import org.anormcypher._
 object riksdagen extends App {
 
 
-  val ledarmotFiles = new TraversePath(Paths.get( """/Users/orjan/Documents/riksdagen/person.json/"""))
-  val voteringFiles = new TraversePath(Paths.get( """/Users/orjan/src/play/neo4j/data/votering-201314.json"""))
+  val ledarmotFiles = new TraversePath(Paths.get( """/Users/orjan/src/github/oluies/riksdagenneoimport/data/person.json"""))
+  val voteringFiles = new TraversePath(Paths.get( """/Users/orjan/src/github/oluies/riksdagenneoimport/data/votering-201314.json"""))
 
   Neo4jREST.setServer("localhost", 7474, "/db/data/")
 
@@ -27,7 +27,7 @@ object riksdagen extends App {
   println(s"rConstraint $rConstraint")
 
 
-  /*ledarmotFiles foreach {
+  ledarmotFiles foreach {
     case (file: Path, attr: BasicFileAttributes) => try {
       import LedarmotPersonAdapter.LedarmotPersonReads
 
@@ -42,7 +42,7 @@ object riksdagen extends App {
         }
 
         json.validate[LedarmotPerson] match {
-          case s: JsSuccess[LedarmotPerson] =>  println("LedarmotPerson: " + s.get.intressent_id)//; insertLedarmot(s.get)
+          case s: JsSuccess[LedarmotPerson] =>  println("LedarmotPerson: " + s.get.intressent_id); insertLedarmot(s.get)
           case e: JsError => println("Errors: " + JsError.toFlatJson(e).toString())
         }
       }
@@ -51,7 +51,7 @@ object riksdagen extends App {
          Throwable => println(s"$file error " + e.getMessage);
     }
   }
-  */
+
 
   voteringFiles foreach {
     case (file: Path, attr: BasicFileAttributes) => try {
@@ -80,6 +80,7 @@ object riksdagen extends App {
   }
 
   def insertVotering(d: DokVotering): (Boolean,Votering) = {
+
 
     val v = d.votering(0)
     val retval = Cypher(
