@@ -18,7 +18,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.anormcypher" %% "anormcypher" % "0.5.1",
-  "com.typesafe.play" %% "play-json" % "2.3.1"
+  "com.typesafe.play" %% "play-json" % "2.7.4"
   //"org.neo4j" % "neo4j-kernel" % "2.1.2"
   //"org.neo4j" % "neo4j-shell" % "2.1.2"
   //"org.neo4j" % "neo4j-rest-graphdb" % "1.9"
