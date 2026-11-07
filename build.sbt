@@ -2,7 +2,7 @@ name := "neo4j"
 
 version := "1.0"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.12"
 
 scalacOptions  ++= Seq("-unchecked", "-deprecation")
 
